@@ -22,7 +22,27 @@ mongoose.connect(process.env.MONGO_URI)
   .then(() => console.log('🟢 Conectado a MongoDB Atlas'))
   .catch(err => console.error('🔴 Error al conectar a MongoDB:', err));
 
-  app.use(cors());
+  const corsOptions = {
+    origin: 'https://task-manager-qvf4.vercel.app', 
+    methods: 'GET,POST,PUT,DELETE', 
+    allowedHeaders: 'Content-Type,Authorization', 
+    credentials: true 
+  };
+  
+  app.use(cors(corsOptions));
+  
+
+  app.use((req, res, next) => {
+    res.header('Access-Control-Allow-Origin', 'https://task-manager-qvf4.vercel.app');
+    res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE');
+    res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+    res.header('Access-Control-Allow-Credentials', 'true'); 
+    next();
+  });
+
+  
+  app.options('*', cors(corsOptions));
+
 
 
   
