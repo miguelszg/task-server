@@ -24,10 +24,22 @@ mongoose.connect(process.env.MONGO_URI)
   .then(() => console.log('🟢 Conectado a MongoDB Atlas'))
   .catch(err => console.error('🔴 Error al conectar a MongoDB:', err));
 
-// Configurar CORS para aceptar peticiones de cualquier origen
-app.use(cors());
-app.use(handleCors());
-app.options('*', cors());
+
+// Agregar esto antes de tus rutas
+app.use((req, res, next) => {
+  res.header('Access-Control-Allow-Origin', 'https://task-manager-qvf4.vercel.app');
+  res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+  res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization');
+  
+  // Manejo de solicitudes OPTIONS
+  if (req.method === 'OPTIONS') {
+    return res.status(200).end();
+  }
+  
+  next();
+});
+
+
 
 
 const userSchema = new mongoose.Schema({
