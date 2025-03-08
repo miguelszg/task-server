@@ -24,20 +24,12 @@ mongoose.connect(process.env.MONGO_URI)
 
 // Configurar CORS para aceptar peticiones de cualquier origen
 app.use(cors({
-  origin: process.env.FRONTEND_URL || 'https://task-manager-qvf4.vercel.app',
-  credentials: true // Si usas cookies o autenticación con sesiones
+  origin: 'https://task-manager-qvf4.vercel.app', // Usa la URL exacta, no process.env
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization']
 }));
 
-// Configurar headers adicionales para CORS
-app.use((req, res, next) => {
-  res.header('Access-Control-Allow-Origin', '*');
-  res.header('Access-Control-Allow-Methods', 'GET,HEAD,PUT,PATCH,POST,DELETE');
-  res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization');
-  next();
-});
-
-// Habilitar preflight para todas las rutas
-app.options('*', cors());
 
 const userSchema = new mongoose.Schema({
   username: { type: String, required: true, unique: true },
