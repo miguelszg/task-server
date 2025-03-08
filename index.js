@@ -361,6 +361,12 @@ app.get('/prueba', (req, res) => {
 
 app.get('/favicon.ico', (req, res) => res.status(204).end());
 
+// Al final de tu archivo, antes de app.listen
+app.use((err, req, res, next) => {
+  console.error('Error en el servidor:', err);
+  res.status(500).json({ success: false, message: 'Error interno del servidor' });
+});
+
 app.listen(PORT, () => {
   console.log(`🚀 Servidor corriendo en http://localhost:${PORT}`);
 });
