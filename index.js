@@ -24,7 +24,7 @@ mongoose.connect(process.env.MONGO_URI)
 
 // Configurar CORS para aceptar peticiones de cualquier origen
 app.use(cors({
-  origin: 'https://task-manager-qvf4.vercel.app', // Usa la URL exacta, no process.env
+  origin: 'https://task-manager-qvf4.vercel.app', 
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization']
