@@ -22,11 +22,10 @@ mongoose.connect(process.env.MONGO_URI)
   .then(() => console.log('🟢 Conectado a MongoDB Atlas'))
   .catch(err => console.error('🔴 Error al conectar a MongoDB:', err));
 
-app.use(cors({
-  origin: 'http://localhost:3001', 
-  credentials: true, 
-}));
+  app.use(cors());
 
+
+  
 const userSchema = new mongoose.Schema({
   username: { type: String, required: true, unique: true },
   email: { type: String, required: true, unique: true },
@@ -365,6 +364,11 @@ app.post('/auth/logout', (req, res) => {
   // No necesitamos hacer nada en el servidor, ya que la autenticación
   // se maneja en el cliente a través de localStorage
   res.json({ success: true, message: 'Sesión cerrada exitosamente' });
+});
+
+
+app.get('/prueba', (req, res) => {
+  res.json({ success: true, message: 'Prueba exitosa' });
 });
 
 app.listen(PORT, () => {
