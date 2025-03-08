@@ -9,6 +9,22 @@ const { handleCors } = require('vercel-cors');
 const app = express();
 const PORT = process.env.PORT || 3000;
 
+// Al inicio de tu aplicación, antes de cualquier otra middleware
+app.use((req, res, next) => {
+  res.header('Access-Control-Allow-Origin', '*');
+  res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+  res.header('Access-Control-Allow-Headers', '*');
+  
+  if (req.method === 'OPTIONS') {
+    return res.status(200).end();
+  }
+  
+  next();
+});
+
+// Luego desactiva todas las demás configuraciones CORS
+// Comenta o elimina cualquier otra línea con cors()
+
 // Optimización de conexión MongoDB para manejar múltiples peticiones
 const connectOptions = {
   useNewUrlParser: true,
@@ -25,19 +41,7 @@ mongoose.connect(process.env.MONGO_URI)
   .catch(err => console.error('🔴 Error al conectar a MongoDB:', err));
 
 
-// Agregar esto antes de tus rutas
-app.use((req, res, next) => {
-  res.header('Access-Control-Allow-Origin', 'https://task-manager-qvf4.vercel.app');
-  res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
-  res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization');
-  
-  // Manejo de solicitudes OPTIONS
-  if (req.method === 'OPTIONS') {
-    return res.status(200).end();
-  }
-  
-  next();
-});
+
 
 
 
