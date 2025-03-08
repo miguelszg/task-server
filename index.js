@@ -22,30 +22,27 @@ mongoose.connect(process.env.MONGO_URI)
   .then(() => console.log('🟢 Conectado a MongoDB Atlas'))
   .catch(err => console.error('🔴 Error al conectar a MongoDB:', err));
 
-  const corsOptions = {
-    origin: 'https://task-manager-qvf4.vercel.app', 
-    methods: 'GET,POST,PUT,DELETE', 
-    allowedHeaders: 'Content-Type,Authorization', 
-    credentials: true 
-  };
-  
-  app.use(cors(corsOptions));
-  
+// Configurar CORS para aceptar peticiones de cualquier origen
+app.use(cors({
+  origin: '*', // Permite cualquier origen
+  methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
+  allowedHeaders: 'Content-Type,Authorization',
+  credentials: true,
+  preflightContinue: false,
+  optionsSuccessStatus: 204
+}));
 
-  app.use((req, res, next) => {
-    res.header('Access-Control-Allow-Origin', 'https://task-manager-qvf4.vercel.app');
-    res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE');
-    res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization');
-    res.header('Access-Control-Allow-Credentials', 'true'); 
-    next();
-  });
+// Configurar headers adicionales para CORS
+app.use((req, res, next) => {
+  res.header('Access-Control-Allow-Origin', '*');
+  res.header('Access-Control-Allow-Methods', 'GET,HEAD,PUT,PATCH,POST,DELETE');
+  res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+  next();
+});
 
-  
-  app.options('*', cors(corsOptions));
+// Habilitar preflight para todas las rutas
+app.options('*', cors());
 
-
-
-  
 const userSchema = new mongoose.Schema({
   username: { type: String, required: true, unique: true },
   email: { type: String, required: true, unique: true },
@@ -386,14 +383,12 @@ app.post('/auth/logout', (req, res) => {
   res.json({ success: true, message: 'Sesión cerrada exitosamente' });
 });
 
-
 app.get('/prueba', (req, res) => {
   res.json({ success: true, message: 'Prueba exitosa' });
   console.log('Prueba exitosa');
 });
 
 app.get('/favicon.ico', (req, res) => res.status(204).end());
-
 
 app.listen(PORT, () => {
   console.log(`🚀 Servidor corriendo en http://localhost:${PORT}`);
