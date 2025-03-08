@@ -369,6 +369,7 @@ app.post('/auth/logout', (req, res) => {
 
 app.get('/prueba', (req, res) => {
   res.json({ success: true, message: 'Prueba exitosa' });
+  console.log('Prueba exitosa');
 });
 
 app.listen(PORT, () => {
