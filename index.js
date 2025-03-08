@@ -3,6 +3,8 @@ const mongoose = require('mongoose');
 const bcrypt = require('bcrypt');
 const cors = require('cors'); 
 require('dotenv').config();
+const { handleCors } = require('vercel-cors');
+
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -23,12 +25,9 @@ mongoose.connect(process.env.MONGO_URI)
   .catch(err => console.error('🔴 Error al conectar a MongoDB:', err));
 
 // Configurar CORS para aceptar peticiones de cualquier origen
-app.use(cors({
-  origin: 'https://task-manager-qvf4.vercel.app', 
-  credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization']
-}));
+app.use(cors());
+app.use(handleCors());
+app.options('*', cors());
 
 
 const userSchema = new mongoose.Schema({
