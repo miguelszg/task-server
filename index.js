@@ -372,6 +372,9 @@ app.get('/prueba', (req, res) => {
   console.log('Prueba exitosa');
 });
 
+app.get('/favicon.ico', (req, res) => res.status(204).end());
+
+
 app.listen(PORT, () => {
   console.log(`🚀 Servidor corriendo en http://localhost:${PORT}`);
 });
