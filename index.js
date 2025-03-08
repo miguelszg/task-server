@@ -3,49 +3,29 @@ const mongoose = require('mongoose');
 const bcrypt = require('bcrypt');
 const cors = require('cors'); 
 require('dotenv').config();
-const { handleCors } = require('vercel-cors');
-
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// Al inicio de tu aplicación, antes de cualquier otra middleware
-app.use((req, res, next) => {
-  res.header('Access-Control-Allow-Origin', '*');
-  res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
-  res.header('Access-Control-Allow-Headers', '*');
-  
-  if (req.method === 'OPTIONS') {
-    return res.status(200).end();
-  }
-  
-  next();
-});
+// Implementación correcta de CORS
+app.use(cors({
+  origin: '*', // Permite todas las origenes (en producción deberías limitar esto)
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Origin', 'X-Requested-With', 'Content-Type', 'Accept', 'Authorization']
+}));
 
-// Luego desactiva todas las demás configuraciones CORS
-// Comenta o elimina cualquier otra línea con cors()
+// Middleware para parsear JSON
+app.use(express.json());
 
-// Optimización de conexión MongoDB para manejar múltiples peticiones
-const connectOptions = {
+// Optimización de conexión MongoDB
+mongoose.connect(process.env.MONGO_URI, {
   useNewUrlParser: true,
-  useUnifiedTopology: true,
-  // Estos ajustes ayudan a manejar mejor múltiples conexiones
-  poolSize: 10,
-  socketTimeoutMS: 45000,
-  keepAlive: true,
-  keepAliveInitialDelay: 300000
-};
+  useUnifiedTopology: true
+})
+.then(() => console.log('🟢 Conectado a MongoDB Atlas'))
+.catch(err => console.error('🔴 Error al conectar a MongoDB:', err));
 
-mongoose.connect(process.env.MONGO_URI)
-  .then(() => console.log('🟢 Conectado a MongoDB Atlas'))
-  .catch(err => console.error('🔴 Error al conectar a MongoDB:', err));
-
-
-
-
-
-
-
+// Esquemas y modelos
 const userSchema = new mongoose.Schema({
   username: { type: String, required: true, unique: true },
   email: { type: String, required: true, unique: true },
@@ -54,14 +34,11 @@ const userSchema = new mongoose.Schema({
 });
 const User = mongoose.model('User', userSchema);
 
-app.use(express.json());
-
 const groupSchema = new mongoose.Schema({
   name: { type: String, required: true, unique: true }, 
   createdBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true }, 
   members: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }], 
 });
-
 const Group = mongoose.model('Group', groupSchema);
 
 const taskSchema = new mongoose.Schema({
@@ -73,17 +50,17 @@ const taskSchema = new mongoose.Schema({
   group: { type: mongoose.Schema.Types.ObjectId, ref: 'Group' },
   assignedTo: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
   createdBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
-  lastUpdated: { type: Date, default: Date.now } // Nuevo campo para seguimiento de actualizaciones
+  lastUpdated: { type: Date, default: Date.now }
 });
-
 const Task = mongoose.model('Task', taskSchema);
 
-// Middleware para registrar y controlar peticiones frecuentes
+// Middleware para registrar peticiones
 app.use((req, res, next) => {
   console.log(`${new Date().toISOString()} - ${req.method} ${req.url}`);
   next();
 });
 
+// Rutas de usuario
 app.post('/register', async (req, res) => {
   const { username, email, password } = req.body;
 
@@ -100,7 +77,6 @@ app.post('/register', async (req, res) => {
 
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    // Asignamos rol 2 (usuario normal) por defecto
     const newUser = new User({ 
       username, 
       email, 
@@ -137,10 +113,9 @@ app.post('/auth/login', async (req, res) => {
   }
 });
 
-// Optimización para endpoint de obtención de usuarios
 app.get('/users', async (req, res) => {
   try {
-    const users = await User.find({}, { password: 0 }).lean(); // Usar lean() para obtener objetos JSON simples
+    const users = await User.find({}, { password: 0 }).lean();
     res.json({ success: true, users });
   } catch (error) {
     console.error('Error al obtener usuarios:', error);
@@ -174,6 +149,7 @@ app.put('/users/:userId/role', async (req, res) => {
   }
 });
 
+// Rutas de grupos
 app.post('/groups', async (req, res) => {
   const { name, createdBy, members } = req.body;
 
@@ -193,12 +169,11 @@ app.post('/groups', async (req, res) => {
   }
 });
 
-// Optimización para endpoint de obtención de grupos
 app.get('/groups', async (req, res) => {
   try {
     const groups = await Group.find({})
       .populate('createdBy members', 'username')
-      .lean(); // Usar lean() para mejorar rendimiento
+      .lean();
     
     res.json({ success: true, groups });
   } catch (error) {
@@ -207,7 +182,6 @@ app.get('/groups', async (req, res) => {
   }
 });
 
-// Optimización para endpoint de obtención de tareas por grupo
 app.get('/groups/:groupId/tasks', async (req, res) => {
   const { groupId } = req.params;
 
@@ -216,7 +190,7 @@ app.get('/groups/:groupId/tasks', async (req, res) => {
       .populate('group', 'name')
       .populate('assignedTo', 'username')
       .populate('createdBy', 'username')
-      .lean(); // Mejorar rendimiento
+      .lean();
 
     res.json({ success: true, tasks });
   } catch (error) {
@@ -231,7 +205,7 @@ app.get('/admin/tasks', async (req, res) => {
       .populate('group', 'name')
       .populate('assignedTo', 'username')
       .populate('createdBy', 'username')
-      .lean(); // Mejorar rendimiento
+      .lean();
 
     res.json({ success: true, tasks });
   } catch (error) {
@@ -247,7 +221,7 @@ app.get('/groups/:groupId', async (req, res) => {
     const group = await Group.findById(groupId)
       .populate('createdBy', 'username')
       .populate('members', 'username')
-      .lean(); // Mejorar rendimiento
+      .lean();
 
     if (!group) {
       return res.status(404).json({ success: false, message: 'Grupo no encontrado' });
@@ -260,6 +234,7 @@ app.get('/groups/:groupId', async (req, res) => {
   }
 });
 
+// Rutas de tareas
 app.post('/tasks', async (req, res) => {
   const { name, description, dueDate, category, status, group, assignedTo, createdBy } = req.body;
 
@@ -288,7 +263,6 @@ app.get('/users/:userId/tasks', async (req, res) => {
   const { userId } = req.params;
 
   try {
-    // Primero, verificar el rol del usuario
     const user = await User.findById(userId);
     
     if (!user) {
@@ -298,14 +272,12 @@ app.get('/users/:userId/tasks', async (req, res) => {
     let tasks;
     
     if (user.role === 1) {
-      // Si es admin, puede ver todas las tareas
       tasks = await Task.find({})
         .populate('group', 'name')
         .populate('assignedTo', 'username')
         .populate('createdBy', 'username')
-        .lean(); // Mejorar rendimiento
+        .lean();
     } else {
-      // Si es usuario normal, solo ve las tareas de sus grupos
       const groups = await Group.find({ members: userId });
       const groupIds = groups.map((group) => group._id);
       
@@ -313,7 +285,7 @@ app.get('/users/:userId/tasks', async (req, res) => {
         .populate('group', 'name')
         .populate('assignedTo', 'username')
         .populate('createdBy', 'username')
-        .lean(); // Mejorar rendimiento
+        .lean();
     }
 
     res.json({ success: true, tasks });
@@ -327,7 +299,6 @@ app.get('/users/:userId/groups', async (req, res) => {
   const { userId } = req.params;
 
   try {
-    // Verificar si el usuario es admin
     const user = await User.findById(userId);
     
     if (!user) {
@@ -337,10 +308,8 @@ app.get('/users/:userId/groups', async (req, res) => {
     let groups;
     
     if (user.role === 1) {
-      // Si es admin, puede ver todos los grupos
       groups = await Group.find({}).lean();
     } else {
-      // Si es usuario normal, solo ve los grupos donde es miembro
       groups = await Group.find({ members: userId }).lean();
     }
     
@@ -356,7 +325,6 @@ app.put('/tasks/:taskId', async (req, res) => {
   const taskData = req.body;
 
   try {
-    // Añadir timestamp de actualización
     taskData.lastUpdated = new Date();
     
     const updatedTask = await Task.findByIdAndUpdate(taskId, taskData, { new: true });
@@ -379,10 +347,7 @@ app.delete('/tasks/:taskId', async (req, res) => {
   }
 });
 
-// Ruta para cerrar sesión - eliminará las credenciales
 app.post('/auth/logout', (req, res) => {
-  // No necesitamos hacer nada en el servidor, ya que la autenticación
-  // se maneja en el cliente a través de localStorage
   res.json({ success: true, message: 'Sesión cerrada exitosamente' });
 });
 
